@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface ReportRepository extends JpaRepository<Report, Long> {
     Optional<Report> findByNormalizedUrl(String normalizedUrl);
     List<Report> findByStatus(ReportStatus status);
+    List<Report> findTop10ByStatusOrderByVerifiedAtDesc(ReportStatus status);
 }
