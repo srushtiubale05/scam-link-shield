@@ -34,6 +34,18 @@ async function ready() {
   if (!filter) await refreshFilter();
 }
 
+async function isAllowed(norm) {
+  const { allow = {} } = await chrome.storage.local.get("allow");
+  const expiry = allow[norm];
+  if (!expiry) return false;
+  if (expiry < Date.now()) {                      // expired: clean up
+    delete allow[norm];
+    await chrome.storage.local.set({ allow });
+    return false;
+  }
+  return true;
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create("refresh", { periodInMinutes: 30 });
   refreshFilter();
@@ -57,7 +69,12 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
 
   const possible = filter.mightContain(norm);
   console.log("Checking:", norm, "| possible match:", possible);
-  if (!possible) return;                       // definitely not in the list
+  if (!possible) return;                          // definitely not in the list
+
+  if (await isAllowed(norm)) {
+    console.log("User chose to proceed, skipping warning:", norm);
+    return;
+  }
 
   // Possible match: confirm with the backend to rule out a false positive
   let res;
@@ -70,8 +87,13 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
 
   if (res.verdict === "KNOWN_SCAM") {
     console.warn("SCAM BLOCKED:", norm);
-    chrome.action.setBadgeText({ tabId: d.tabId, text: "!" });
-    chrome.action.setBadgeBackgroundColor({ tabId: d.tabId, color: "#d93025" });
+    const q = new URLSearchParams({
+      url: d.url,
+      norm,
+      cat: res.category || "SCAM",
+      n: String(res.confirmations ?? "?"),
+    });
+    chrome.tabs.update(d.tabId, { url: chrome.runtime.getURL("warning.html") + "?" + q });
   } else {
     console.log("Backend says not a known scam (false positive):", res.verdict);
   }

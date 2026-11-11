@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Scam Link Shield",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Checks links against a community-verified scam list, locally and privately.",
-  "permissions": ["webNavigation", "storage", "alarms"],
+  "permissions": ["webNavigation", "storage", "alarms", "tabs"],
   "host_permissions": ["http://localhost:8080/*", "http://*/*", "https://*/*"],
   "action": { "default_title": "Scam Link Shield" },
   "background": { "service_worker": "background.js", "type": "module" }
