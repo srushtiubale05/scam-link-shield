@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 300px; margin: 0; padding: 16px; font-family: system-ui, sans-serif; font-size: 14px; }
+    h2 { margin: 0 0 12px; font-size: 16px; }
+    input, select, button { width: 100%; box-sizing: border-box; padding: 8px; margin: 4px 0; font-size: 14px; }
+    button { cursor: pointer; border: 0; border-radius: 6px; background: #b3261e; color: #fff; }
+    button.secondary { background: #eee; color: #333; }
+    .url { font-family: monospace; font-size: 12px; word-break: break-all; background: #f3f3f3;
+           padding: 6px; border-radius: 6px; margin: 6px 0; }
+    #msg { margin-top: 8px; min-height: 18px; }
+    .err { color: #b3261e; } .ok { color: #1e7e34; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>🛡️ Scam Link Shield</h2>
+
+  <div id="loginView" class="hidden">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn">Log in</button>
+  </div>
+
+  <div id="mainView" class="hidden">
+    <div>Logged in as <b id="who"></b></div>
+    <div class="url" id="pageUrl"></div>
+    <select id="category"></select>
+    <button id="reportBtn">Report this page as scam</button>
+    <button id="logoutBtn" class="secondary">Log out</button>
+  </div>
+
+  <div id="msg"></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,8 +1,16 @@
 import { BloomFilter } from "./src/bloom.js";
 import { normalize } from "./src/normalizer.js";
+import { API, CATEGORIES, reportUrl } from "./src/api.js";
 
-const API = "http://localhost:8080";
 let filter = null;
+
+// 1x1 red PNG, used as the notification icon so we don't need an image file
+const ICON =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+function notify(title, message) {
+  chrome.notifications.create({ type: "basic", iconUrl: ICON, title, message });
+}
 
 async function loadFromStorage() {
   const { bloom } = await chrome.storage.local.get("bloom");
@@ -38,7 +46,7 @@ async function isAllowed(norm) {
   const { allow = {} } = await chrome.storage.local.get("allow");
   const expiry = allow[norm];
   if (!expiry) return false;
-  if (expiry < Date.now()) {                      // expired: clean up
+  if (expiry < Date.now()) {
     delete allow[norm];
     await chrome.storage.local.set({ allow });
     return false;
@@ -46,13 +54,40 @@ async function isAllowed(norm) {
   return true;
 }
 
+function createMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "report",
+      title: "Report as scam",
+      contexts: ["link", "page"],
+    });
+    for (const [value, label] of CATEGORIES) {
+      chrome.contextMenus.create({
+        id: `report:${value}`,
+        parentId: "report",
+        title: label,
+        contexts: ["link", "page"],
+      });
+    }
+  });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create("refresh", { periodInMinutes: 30 });
+  createMenus();
   refreshFilter();
 });
 
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === "refresh") refreshFilter();
+});
+
+chrome.contextMenus.onClicked.addListener(async (info) => {
+  if (!String(info.menuItemId).startsWith("report:")) return;
+  const category = String(info.menuItemId).split(":")[1];
+  const url = info.linkUrl || info.pageUrl;
+  const r = await reportUrl(url, category);
+  notify(r.ok ? "Reported" : "Could not report", r.message);
 });
 
 chrome.webNavigation.onCommitted.addListener(async (d) => {
@@ -69,14 +104,13 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
 
   const possible = filter.mightContain(norm);
   console.log("Checking:", norm, "| possible match:", possible);
-  if (!possible) return;                          // definitely not in the list
+  if (!possible) return;
 
   if (await isAllowed(norm)) {
     console.log("User chose to proceed, skipping warning:", norm);
     return;
   }
 
-  // Possible match: confirm with the backend to rule out a false positive
   let res;
   try {
     res = await (await fetch(`${API}/api/check?url=${encodeURIComponent(d.url)}`)).json();
