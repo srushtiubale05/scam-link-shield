@@ -28,8 +28,8 @@ public class ReportController {
         return reportService.confirm(auth.getName(), id);
     }
 
-    @GetMapping
-    public List<ReportResponse> list(@RequestParam(required = false) ReportStatus status) {
-        return reportService.list(status);
+    @GetMapping("/mine")
+    public List<ReportResponse> mine(Authentication auth) {
+        return reportService.mine(auth.getName());
     }
 }

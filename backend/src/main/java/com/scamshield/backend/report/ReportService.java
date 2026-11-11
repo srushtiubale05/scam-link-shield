@@ -73,6 +73,13 @@ public class ReportService {
         return reports.stream().map(ReportResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ReportResponse> mine(String email) {
+        User u = currentUser(email);
+        return reportRepository.findByReporterIdOrderByCreatedAtDesc(u.getId())
+                .stream().map(ReportResponse::from).toList();
+    }
+    
     private ReportResponse confirmInternal(Report report, User user) {
         if (confirmationRepository.existsByReportIdAndUserId(report.getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already confirmed this report");
