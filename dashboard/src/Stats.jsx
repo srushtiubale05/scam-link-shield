@@ -1,60 +1,53 @@
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { request } from "./api";
 
-function Card({ label, value, color }) {
-  return (
-    <div style={{ flex: 1, padding: 16, borderRadius: 10, background: "#f6f6f6" }}>
-      <div style={{ fontSize: 32, fontWeight: 700, color }}>{value}</div>
-      <div>{label}</div>
-    </div>
-  );
-}
+const COLORS = ["#7c5cff", "#22d3ee", "#2ee59d", "#ffb020", "#ff4d6d"];
 
 export default function Stats() {
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState("");
+  const [s, setS] = useState(null);
+  const [err, setErr] = useState("");
+  useEffect(() => { request("/api/stats").then(setS).catch((e) => setErr(e.message)); }, []);
 
-  useEffect(() => {
-    request("/api/stats").then(setStats).catch((e) => setError(e.message));
-  }, []);
+  if (err) return <p style={{ color: "var(--red)" }}>{err}</p>;
+  if (!s) return <p className="muted">Loading...</p>;
 
-  if (error) return <p className="err">{error}</p>;
-  if (!stats) return <p>Loading...</p>;
-
-  const chart = Object.entries(stats.byCategory).map(([name, count]) => ({
-    name: name.replace("_", " "), count,
-  }));
+  const chart = Object.entries(s.byCategory).map(([name, count]) => ({ name: name.replace("_", " "), count }));
 
   return (
-    <>
-      <div style={{ display: "flex", gap: 16, margin: "16px 0" }}>
-        <Card label="Verified scams" value={stats.verified} color="#b3261e" />
-        <Card label="Pending review" value={stats.pending} color="#b26a00" />
-        <Card label="Rejected" value={stats.rejected} color="#666" />
+    <div className="fade">
+      <h2 className="sec">Live scam statistics</h2>
+      <div className="grid g3">
+        <div className="card stat"><b style={{ color: "var(--red)" }}>{s.verified}</b><span>Verified scams</span></div>
+        <div className="card stat"><b style={{ color: "var(--amber)" }}>{s.pending}</b><span>Pending review</span></div>
+        <div className="card stat"><b className="muted">{s.rejected}</b><span>Rejected</span></div>
       </div>
-      <h2>Scams by category</h2>
-      <div style={{ height: 260 }}>
+
+      <h2 className="sec">Scams by category</h2>
+      <div className="card" style={{ height: 300 }}>
         <ResponsiveContainer>
           <BarChart data={chart}>
-            <XAxis dataKey="name" /><YAxis allowDecimals={false} /><Tooltip />
-            <Bar dataKey="count" fill="#b3261e" />
+            <XAxis dataKey="name" stroke="#8e98c4" />
+            <YAxis allowDecimals={false} stroke="#8e98c4" />
+            <Tooltip contentStyle={{ background: "#182042", border: "1px solid #26305a", borderRadius: 10 }} />
+            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+              {chart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <h2>Recently verified</h2>
-      <table>
-        <thead><tr><th>Link</th><th>Category</th><th>Confirmations</th></tr></thead>
-        <tbody>
-          {stats.recent.map((r) => (
-            <tr key={r.id}>
-              <td className="mono">{r.normalizedUrl}</td>
-              <td>{r.category.replace("_", " ")}</td>
-              <td>{r.confirmationCount}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+
+      <h2 className="sec">Recently verified</h2>
+      <div className="list">
+        {s.recent.map((r) => (
+          <div className="item" key={r.id}>
+            <span>🚫</span>
+            <div className="grow mono">{r.normalizedUrl}</div>
+            <span className="badge cat">{r.category.replace("_", " ")}</span>
+            <span className="muted">{r.confirmationCount} confirmations</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

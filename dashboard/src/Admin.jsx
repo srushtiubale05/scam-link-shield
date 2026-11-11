@@ -1,43 +1,35 @@
 import { useEffect, useState } from "react";
 import { request } from "./api";
 
-export default function Admin() {
+export default function Admin({ notify }) {
   const [pending, setPending] = useState([]);
-  const [error, setError] = useState("");
-
   const load = () =>
-    request("/api/admin/reports?status=PENDING").then(setPending).catch((e) => setError(e.message));
+    request("/api/admin/reports?status=PENDING").then(setPending).catch((e) => notify(e.message, false));
   useEffect(() => { load(); }, []);
 
   async function act(id, action) {
     try {
       await request(`/api/admin/reports/${id}/${action}`, { method: "POST" });
+      notify(action === "approve" ? "Approved ✅ now a verified scam" : "Rejected ❌");
       load();
-    } catch (e) {
-      setError(e.message);
-    }
+    } catch (e) { notify(e.message, false); }
   }
 
   return (
-    <>
-      <h2>Pending reports</h2>
-      {error && <p className="err">{error}</p>}
-      {pending.length === 0 && <p>Nothing waiting for review.</p>}
-      <table>
-        <tbody>
-          {pending.map((r) => (
-            <tr key={r.id}>
-              <td className="mono">{r.normalizedUrl}</td>
-              <td>{r.category.replace("_", " ")}</td>
-              <td>{r.confirmationCount} confirmation(s)</td>
-              <td>
-                <button className="ok" onClick={() => act(r.id, "approve")}>Approve</button>{" "}
-                <button onClick={() => act(r.id, "reject")}>Reject</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    <div className="fade">
+      <h2 className="sec">Pending reports ({pending.length})</h2>
+      {pending.length === 0 && <div className="card">🎉 Nothing waiting for review.</div>}
+      <div className="list">
+        {pending.map((r) => (
+          <div className="item" key={r.id}>
+            <div className="grow mono">{r.normalizedUrl}</div>
+            <span className="badge cat">{r.category.replace("_", " ")}</span>
+            <span className="muted">{r.confirmationCount} confirmation(s)</span>
+            <button className="btn ok small" onClick={() => act(r.id, "approve")}>Approve</button>
+            <button className="btn bad small" onClick={() => act(r.id, "reject")}>Reject</button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

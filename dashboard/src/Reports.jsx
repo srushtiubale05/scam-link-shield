@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { request, CATEGORIES } from "./api";
 
-export default function Reports() {
+const ICONS = { PHISHING: "🎣", FAKE_JOB: "💼", UPI_FRAUD: "💸", LOTTERY_SCAM: "🎰", OTHER: "❓" };
+
+export default function Reports({ notify }) {
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [msg, setMsg] = useState({ text: "", ok: true });
   const [mine, setMine] = useState([]);
 
   const load = () => request("/api/reports/mine").then(setMine).catch(() => {});
@@ -14,41 +15,39 @@ export default function Reports() {
     e.preventDefault();
     try {
       const r = await request("/api/reports", { method: "POST", body: { url, category } });
-      setMsg({ text: `Thanks! Confirmations: ${r.confirmationCount}, status: ${r.status}`, ok: true });
-      setUrl("");
-      load();
-    } catch (err) {
-      setMsg({ text: err.message, ok: false });
-    }
+      notify(`Thanks! 🙌 Confirmations: ${r.confirmationCount} · ${r.status}`);
+      setUrl(""); load();
+    } catch (err) { notify(err.message, false); }
   }
 
   return (
-    <>
-      <h2>Report a scam link</h2>
-      <form onSubmit={submit} style={{ display: "grid", maxWidth: 480 }}>
-        <input placeholder="https://suspicious-link.xyz/login" value={url}
+    <div className="fade">
+      <h2 className="sec">Report a scam link</h2>
+      <form className="card grid" onSubmit={submit}>
+        <input className="input" placeholder="https://suspicious-link.xyz/login" value={url}
                onChange={(e) => setUrl(e.target.value)} required />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
-        </select>
-        <button type="submit">Submit report</button>
-        {msg.text && <p className={msg.ok ? "good" : "err"}>{msg.text}</p>}
+        <div className="chips" style={{ marginTop: 0 }}>
+          {CATEGORIES.map((c) => (
+            <button type="button" key={c} className={"chip" + (category === c ? " on" : "")} onClick={() => setCategory(c)}>
+              {ICONS[c]} {c.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+        <div><button className="btn">Submit report</button></div>
       </form>
 
-      <h2>My reports</h2>
-      <table>
-        <thead><tr><th>Link</th><th>Category</th><th>Status</th><th>Confirmations</th></tr></thead>
-        <tbody>
-          {mine.map((r) => (
-            <tr key={r.id}>
-              <td className="mono">{r.normalizedUrl}</td>
-              <td>{r.category.replace("_", " ")}</td>
-              <td>{r.status}</td>
-              <td>{r.confirmationCount}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+      <h2 className="sec">My reports</h2>
+      {mine.length === 0 && <p className="muted">You have not reported anything yet.</p>}
+      <div className="list">
+        {mine.map((r) => (
+          <div className="item" key={r.id}>
+            <span>{ICONS[r.category]}</span>
+            <div className="grow mono">{r.normalizedUrl}</div>
+            <span className="muted">{r.confirmationCount} confirmations</span>
+            <span className={"badge " + r.status}>{r.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
