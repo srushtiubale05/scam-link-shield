@@ -1,0 +1,3 @@
+n,bloom_bytes,raw_string_bytes,memory_ratio,bloom_build_ms,bloom_ns_per_lookup,hashset_ns_per_lookup,db_ns_per_lookup,theoretical_fpr,measured_fpr
+100000,119814,4374854,36.5,43,202,103,861464,0.01004,0.01018
+1000000,1198133,45748575,38.2,208,320,68,710796,0.01004,0.01005
