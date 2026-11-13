@@ -10,4 +10,3 @@ HELP.md
 .venv/
 ml-service/data/
 __pycache__/
-ml-service/model.joblib

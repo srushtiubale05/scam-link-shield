@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16
     container_name: scamshield-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: scamshield
       POSTGRES_USER: scam
@@ -10,6 +11,45 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scam -d scamshield"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ml-service:
+    build: ./ml-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scamshield?options=-c%20TimeZone=Asia/Kolkata
+      SPRING_DATASOURCE_USERNAME: scam
+      SPRING_DATASOURCE_PASSWORD: scam123
+      APP_ML_URL: http://ml-service:8000
+      APP_JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-string-at-least-32-characters-long}
+    ports:
+      - "8080:8080"
+
+  dashboard:
+    build:
+      context: ./dashboard
+      args:
+        VITE_API_URL: http://localhost:8080
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
 
 volumes:
   pgdata:
