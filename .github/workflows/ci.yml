@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run unit tests
+        working-directory: backend
+        run: mvn -B -q test -Dtest='UrlNormalizerTest,BloomFilterTest,ReportServiceTest'
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run extension tests
+        working-directory: extension
+        run: npm test
+
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Build dashboard
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+  ml-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install and smoke-test the scoring service
+        working-directory: ml-service
+        run: |
+          pip install -r requirements-docker.txt httpx
+          python - <<'EOF'
+          from fastapi.testclient import TestClient
+          from app.main import app
+          c = TestClient(app)
+          hi = c.post("/score", json={"url": "sbi-kyc-update-now.xyz/login"}).json()
+          lo = c.post("/score", json={"url": "amazon.in"}).json()
+          print(hi, lo)
+          assert hi["score"] > lo["score"]
+          assert hi["level"] == "HIGH_RISK"
+          EOF
