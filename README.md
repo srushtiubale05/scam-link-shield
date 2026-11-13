@@ -4,7 +4,6 @@
 
 **Community-verified scam link detection with a Chrome extension that checks every page locally using a Bloom filter, plus an ML model for brand-new scams.**
 
-![Link checker](docs/checker.png)
 
 ## The problem
 
@@ -52,13 +51,6 @@ A verdict of `UNKNOWN` never means "safe".
 - **ML scoring:** gradient-boosted model on 22 URL features, behind a FastAPI service with a timeout fallback.
 - **JWT auth with roles** (USER, ADMIN) and BCrypt password hashing.
 
-| Link checker | Extension warning |
-|---|---|
-| ![Checker](docs/checker.png) | ![Warning](docs/warning.png) |
-
-| Statistics | Admin panel |
-|---|---|
-| ![Stats](docs/stats.png) | ![Admin](docs/admin.png) |
 
 ## Benchmark: Bloom filter vs HashSet vs PostgreSQL
 
