@@ -56,4 +56,11 @@ public class Report {
     void onCreate() {
         this.createdAt = Instant.now();
     }
+
+    @Column(length = 20)
+    @Builder.Default
+    private String source = "COMMUNITY";     // COMMUNITY, OPENPHISH, ...
+
+    @Column(name = "last_seen")
+    private Instant lastSeen;                // when a feed last listed this URL
 }
