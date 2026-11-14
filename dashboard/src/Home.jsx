@@ -26,7 +26,7 @@ function Counter({ value, label }) {
 
 function Result({ r }) {
   const cfg = {
-    KNOWN_SCAM: ["scam", "🚨", "Known scam", "Confirmed by the community. Do not open this link."],
+    KNOWN_SCAM: ["scam", "🚨", "Known scam", "Verified as a scam. Do not open this link."],
     HIGH_RISK: ["scam", "⚠️", "High risk", "Our AI model strongly flags this link as phishing."],
     SUSPICIOUS: ["warn", "🤔", "Looks suspicious", "Some warning signs. Be careful and verify the sender."],
     UNKNOWN: ["none", "🔍", "No warning found", "Not in our scam list. That does not guarantee it is safe."],
@@ -39,7 +39,12 @@ function Result({ r }) {
       <div className="muted">{cfg[3]}</div>
       <div className="mono" style={{ marginTop: 8, fontSize: 13 }}>{r.normalizedUrl}</div>
       {r.verdict === "KNOWN_SCAM" && (
-        <p style={{ margin: "8px 0 0" }}>Category: <b>{r.category.replace("_", " ")}</b> · confirmed by <b>{r.confirmations}</b> user(s)</p>
+        <p style={{ margin: "8px 0 0" }}>
+          Category: <b>{r.category.replace("_", " ")}</b> ·{" "}
+          {r.source && r.source !== "COMMUNITY"
+            ? <>listed by <b>{r.source}</b></>
+            : <>confirmed by <b>{r.confirmations}</b> user(s)</>}
+        </p>
       )}
       {score != null && (
         <>
@@ -78,7 +83,7 @@ export default function Home({ goReport }) {
       <section className="hero">
         <div className="shield">🛡️</div>
         <h1>Is that link <span className="grad">a scam?</span></h1>
-        <p>Paste any link from WhatsApp, SMS or email. We check it against community-verified scams and an AI model, before you click.</p>
+        <p>Paste any link from WhatsApp, SMS or email. We check it against verified scam lists and an AI model, before you click.</p>
 
         <div className="checker">
           <div className="row">
@@ -108,8 +113,8 @@ export default function Home({ goReport }) {
 
       <h2 className="sec">How it works</h2>
       <div className="grid g3">
-        <div className="card step fade"><div className="n">1</div><h3>Community reports</h3>
-          <p className="muted">Anyone can report a scam link. When enough people confirm it, it becomes verified.</p></div>
+        <div className="card step fade"><div className="n">1</div><h3>Threat feeds and community</h3>
+          <p className="muted">Scam links come from public threat feeds and from community reports. Reports become verified after enough people confirm them.</p></div>
         <div className="card step fade"><div className="n">2</div><h3>Instant local check</h3>
           <p className="muted">Our browser extension holds a tiny Bloom filter and checks every page in microseconds, without sending your browsing history anywhere.</p></div>
         <div className="card step fade"><div className="n">3</div><h3>AI for new scams</h3>

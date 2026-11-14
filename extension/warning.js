@@ -3,10 +3,13 @@ const target = params.get("url") || "";
 const category = params.get("cat") || "SCAM";
 const confirmations = params.get("n") || "?";
 const norm = params.get("norm") || "";
+const src = params.get("src") || "COMMUNITY";
 
 document.getElementById("url").textContent = target;
 document.getElementById("meta").textContent =
-  `Category: ${category.replace("_", " ")} · confirmed by ${confirmations} user(s)`;
+  src !== "COMMUNITY"
+    ? `Category: ${category.replace("_", " ")} · listed by ${src}`
+    : `Category: ${category.replace("_", " ")} · confirmed by ${confirmations} user(s)`;
 
 document.getElementById("back").addEventListener("click", () => {
   if (history.length > 1) history.back();

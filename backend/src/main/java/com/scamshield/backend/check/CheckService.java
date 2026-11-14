@@ -26,13 +26,14 @@ public class CheckService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
-        // Layer 1: community-verified scam (source of truth)
+        // Layer 1: verified scam (community or threat feed), the source of truth
         var known = reportRepository.findByNormalizedUrl(norm.normalizedUrl())
                 .filter(r -> r.getStatus() == ReportStatus.VERIFIED);
         if (known.isPresent()) {
             var r = known.get();
             return new CheckResponse("KNOWN_SCAM", r.getNormalizedUrl(),
-                    r.getCategory(), r.getConfirmationCount(), null);
+                    r.getCategory(), r.getConfirmationCount(), null,
+                    r.getSource() == null ? "COMMUNITY" : r.getSource());
         }
 
         // Layer 2: ML signal for unseen URLs (falls back to UNKNOWN if the service is down)
@@ -44,8 +45,8 @@ public class CheckService {
                 case "SUSPICIOUS" -> "SUSPICIOUS";
                 default -> "UNKNOWN";
             };
-            return new CheckResponse(verdict, norm.normalizedUrl(), null, null, ml.get().score());
+            return new CheckResponse(verdict, norm.normalizedUrl(), null, null, ml.get().score(), "ML");
         }
-        return new CheckResponse("UNKNOWN", norm.normalizedUrl(), null, null, null);
+        return new CheckResponse("UNKNOWN", norm.normalizedUrl(), null, null, null, null);
     }
 }

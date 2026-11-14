@@ -44,7 +44,9 @@ export default function Stats() {
             <span>🚫</span>
             <div className="grow mono">{r.normalizedUrl}</div>
             <span className="badge cat">{r.category.replace("_", " ")}</span>
-            <span className="muted">{r.confirmationCount} confirmations</span>
+            <span className="muted">
+              {r.source && r.source !== "COMMUNITY" ? `via ${r.source}` : `${r.confirmationCount} confirmations`}
+            </span>
           </div>
         ))}
       </div>

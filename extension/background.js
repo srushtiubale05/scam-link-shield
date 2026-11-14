@@ -126,6 +126,7 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
       norm,
       cat: res.category || "SCAM",
       n: String(res.confirmations ?? "?"),
+      src: res.source || "COMMUNITY",
     });
     chrome.tabs.update(d.tabId, { url: chrome.runtime.getURL("warning.html") + "?" + q });
   } else {
