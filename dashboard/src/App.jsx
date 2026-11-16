@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { getAuth, setAuth } from "./api";
 import Home from "./Home";
 import Stats from "./Stats";
+import Campaigns from "./Campaigns";
 import Login from "./Login";
 import Reports from "./Reports";
 import Admin from "./Admin";
@@ -19,7 +20,7 @@ export default function App() {
   const afterAuth = () => { setAuthState(getAuth()); setPage("home"); };
   const logout = () => { setAuth(null); setAuthState(null); setPage("home"); notify("Logged out"); };
 
-  const links = [["home", "Check a link"], ["stats", "Live stats"]];
+  const links = [["home", "Check a link"], ["stats", "Live stats"], ["campaigns", "Campaigns"]];
   if (auth) links.push(["report", "Report a scam"]);
   if (auth?.role === "ADMIN") links.push(["admin", "Admin"]);
 
@@ -47,6 +48,7 @@ export default function App() {
       <div className="container">
         {page === "home" && <Home goReport={() => setPage(auth ? "report" : "login")} />}
         {page === "stats" && <Stats />}
+        {page === "campaigns" && <Campaigns />}
         {page === "login" && !auth && <Login onDone={afterAuth} notify={notify} />}
         {page === "report" && auth && <Reports notify={notify} />}
         {page === "admin" && auth?.role === "ADMIN" && <Admin notify={notify} />}
