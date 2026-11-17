@@ -24,7 +24,8 @@ public class CampaignService {
         if (System.currentTimeMillis() - cachedAt > TTL_MS) {
             List<CampaignBuilder.Item> items = reports.findByStatus(ReportStatus.VERIFIED).stream()
                     .map(r -> new CampaignBuilder.Item(r.getId(), r.getNormalizedUrl(),
-                            r.getSource() == null ? "COMMUNITY" : r.getSource(), r.getCategory().name()))
+                            r.getSource() == null ? "COMMUNITY" : r.getSource(), r.getCategory().name(),
+                            r.getUpiId(), r.getPhone()))
                     .toList();
             cache = CampaignBuilder.build(items, KEEP);
             cachedAt = System.currentTimeMillis();

@@ -1,5 +1,6 @@
 package com.scamshield.backend.report;
 
+import com.scamshield.backend.indicator.IndicatorNormalizer;
 import com.scamshield.backend.url.UrlNormalizer;
 import com.scamshield.backend.user.User;
 import com.scamshield.backend.user.UserRepository;
@@ -36,15 +37,22 @@ public class ReportService {
         User user = currentUser(email);
 
         UrlNormalizer.Result norm;
+        String upi;
+        String phone;
         try {
             norm = UrlNormalizer.normalize(req.url());
+            upi = IndicatorNormalizer.upi(req.upiId());
+            phone = IndicatorNormalizer.phone(req.phone());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
         var existing = reportRepository.findByNormalizedUrl(norm.normalizedUrl());
         if (existing.isPresent()) {
-            return confirmInternal(existing.get(), user);
+            Report r = existing.get();
+            if (r.getUpiId() == null && upi != null) r.setUpiId(upi);          // fill in missing details
+            if (r.getPhone() == null && phone != null) r.setPhone(phone);
+            return confirmInternal(r, user);
         }
 
         Report report = Report.builder()
@@ -53,6 +61,8 @@ public class ReportService {
                 .domain(norm.domain())
                 .category(req.category())
                 .reporter(user)
+                .upiId(upi)
+                .phone(phone)
                 .build();
         report = reportRepository.save(report);
         confirmationRepository.save(Confirmation.builder().report(report).user(user).build());
@@ -79,7 +89,7 @@ public class ReportService {
         return reportRepository.findByReporterIdOrderByCreatedAtDesc(u.getId())
                 .stream().map(ReportResponse::from).toList();
     }
-    
+
     private ReportResponse confirmInternal(Report report, User user) {
         if (confirmationRepository.existsByReportIdAndUserId(report.getId(), user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already confirmed this report");

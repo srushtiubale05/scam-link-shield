@@ -1,5 +1,6 @@
 package com.scamshield.backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -15,9 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import org.springframework.beans.factory.annotation.Value;
 import java.util.Arrays;
-
 import java.util.List;
 
 @Configuration
@@ -31,9 +30,9 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/error", "/api/auth/**", "/api/check",
-                     "/api/bloom/**", "/api/stats", "/api/campaigns").permitAll()
+                                 "/api/bloom/**", "/api/stats", "/api/campaigns",
+                                 "/api/indicators/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

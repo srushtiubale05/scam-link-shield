@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { request } from "./api";
 
-const LABEL = { domain: "same domain", host: "same host", kit: "same page path" };
+const LABEL = {
+  domain: "same domain",
+  host: "same host",
+  kit: "same page path",
+  upi: "same UPI ID",
+  phone: "same phone",
+};
 
 function why(key) {
   const i = key.indexOf(":");
@@ -23,8 +29,8 @@ export default function Campaigns() {
     <div className="fade">
       <h2 className="sec">Scam campaigns</h2>
       <p className="muted">
-        Scams that share a domain or the same phishing-kit page path are grouped into one campaign.
-        The reason for each link is shown, so the grouping is explainable.
+        Scams that share a domain, a phishing-kit page path, a UPI ID or a phone number are grouped into one campaign.
+        The reason for each link is shown, so the grouping is explainable. Phone numbers are masked.
       </p>
 
       {list.length === 0 && <div className="card" style={{ marginTop: 16 }}>No linked campaigns found yet.</div>}

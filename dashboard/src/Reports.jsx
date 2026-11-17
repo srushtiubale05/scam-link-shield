@@ -5,6 +5,8 @@ const ICONS = { PHISHING: "🎣", FAKE_JOB: "💼", UPI_FRAUD: "💸", LOTTERY_S
 
 export default function Reports({ notify }) {
   const [url, setUrl] = useState("");
+  const [upi, setUpi] = useState("");
+  const [phone, setPhone] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [mine, setMine] = useState([]);
 
@@ -14,9 +16,12 @@ export default function Reports({ notify }) {
   async function submit(e) {
     e.preventDefault();
     try {
-      const r = await request("/api/reports", { method: "POST", body: { url, category } });
+      const body = { url, category };
+      if (upi.trim()) body.upiId = upi.trim();
+      if (phone.trim()) body.phone = phone.trim();
+      const r = await request("/api/reports", { method: "POST", body });
       notify(`Thanks! 🙌 Confirmations: ${r.confirmationCount} · ${r.status}`);
-      setUrl(""); load();
+      setUrl(""); setUpi(""); setPhone(""); load();
     } catch (err) { notify(err.message, false); }
   }
 
@@ -32,6 +37,13 @@ export default function Reports({ notify }) {
               {ICONS[c]} {c.replace("_", " ")}
             </button>
           ))}
+        </div>
+        <div className="muted" style={{ fontSize: 13 }}>
+          Optional: did the page ask you to pay? Adding the payment details helps link related scams.
+        </div>
+        <div className="row">
+          <input className="input" placeholder="UPI ID seen (name@bank)" value={upi} onChange={(e) => setUpi(e.target.value)} />
+          <input className="input" placeholder="Phone number seen" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <div><button className="btn">Submit report</button></div>
       </form>

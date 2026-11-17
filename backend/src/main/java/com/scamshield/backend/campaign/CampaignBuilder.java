@@ -1,11 +1,17 @@
 package com.scamshield.backend.campaign;
 
+import com.scamshield.backend.indicator.IndicatorNormalizer;
+
 import java.util.*;
 
 /** Groups scams that share an entity (union-find / connected components). Pure logic, easy to test. */
 public final class CampaignBuilder {
 
-    public record Item(long id, String normalizedUrl, String source, String category) {}
+    public record Item(long id, String normalizedUrl, String source, String category, String upi, String phone) {
+        public Item(long id, String normalizedUrl, String source, String category) {
+            this(id, normalizedUrl, source, category, null, null);
+        }
+    }
 
     public record Campaign(long id, int size, int domains, String brand, String category,
                            List<String> linkedBy, List<String> sources, List<String> samples) {}
@@ -17,14 +23,21 @@ public final class CampaignBuilder {
         int[] parent = new int[n];
         for (int i = 0; i < n; i++) parent[i] = i;
 
-        List<EntityExtractor.Entities> ents = new ArrayList<>(n);
+        List<Set<String>> allKeys = new ArrayList<>(n);
+        List<String> itemBrands = new ArrayList<>(n);
         Map<String, Integer> first = new HashMap<>();
         Map<String, Integer> keyCount = new HashMap<>();
 
         for (int i = 0; i < n; i++) {
-            EntityExtractor.Entities e = EntityExtractor.extract(items.get(i).normalizedUrl());
-            ents.add(e);
-            for (String key : e.keys()) {
+            Item it = items.get(i);
+            EntityExtractor.Entities e = EntityExtractor.extract(it.normalizedUrl());
+            Set<String> keys = new LinkedHashSet<>(e.keys());
+            if (it.upi() != null) keys.add("upi:" + it.upi());
+            if (it.phone() != null) keys.add("phone:" + it.phone());
+            allKeys.add(keys);
+            itemBrands.add(e.brand());
+
+            for (String key : keys) {
                 keyCount.merge(key, 1, Integer::sum);
                 Integer prev = first.putIfAbsent(key, i);
                 if (prev != null) union(parent, prev, i);
@@ -50,12 +63,11 @@ public final class CampaignBuilder {
 
             for (int idx : g) {
                 Item it = items.get(idx);
-                EntityExtractor.Entities e = ents.get(idx);
                 minId = Math.min(minId, it.id());
                 sources.add(it.source());
                 cats.merge(it.category(), 1, Integer::sum);
-                if (e.brand() != null) brands.merge(e.brand(), 1, Integer::sum);
-                for (String key : e.keys()) {
+                if (itemBrands.get(idx) != null) brands.merge(itemBrands.get(idx), 1, Integer::sum);
+                for (String key : allKeys.get(idx)) {
                     if (key.startsWith("domain:") || key.startsWith("host:")) domainKeys.add(key);
                     if (keyCount.get(key) >= 2) links.merge(key, 1, Integer::sum);   // shared by 2+ scams
                 }
@@ -65,7 +77,7 @@ public final class CampaignBuilder {
             List<String> linkedBy = links.entrySet().stream()
                     .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
                             .thenComparing(Map.Entry.comparingByKey()))
-                    .limit(5).map(Map.Entry::getKey).toList();
+                    .limit(5).map(e -> display(e.getKey())).toList();
 
             out.add(new Campaign(minId, g.size(), domainKeys.size(), top(brands), top(cats),
                     linkedBy, new ArrayList<>(sources), samples));
@@ -73,6 +85,12 @@ public final class CampaignBuilder {
 
         out.sort(Comparator.comparingInt(Campaign::size).reversed().thenComparingLong(Campaign::id));
         return out.size() > limit ? new ArrayList<>(out.subList(0, limit)) : out;
+    }
+
+    /** Phone numbers are never shown in full. */
+    private static String display(String key) {
+        if (key.startsWith("phone:")) return "phone:" + IndicatorNormalizer.maskPhone(key.substring(6));
+        return key;
     }
 
     private static String top(Map<String, Integer> counts) {

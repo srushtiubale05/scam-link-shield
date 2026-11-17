@@ -52,15 +52,21 @@ public class Report {
     @Column(name = "verified_at")
     private Instant verifiedAt;
 
-    @PrePersist
-    void onCreate() {
-        this.createdAt = Instant.now();
-    }
-
     @Column(length = 20)
     @Builder.Default
     private String source = "COMMUNITY";     // COMMUNITY, OPENPHISH, ...
 
     @Column(name = "last_seen")
     private Instant lastSeen;                // when a feed last listed this URL
+
+    @Column(name = "upi_id", length = 100)
+    private String upiId;                    // optional: payee seen on the scam page
+
+    @Column(length = 15)
+    private String phone;                    // optional: 10-digit mobile seen on the scam page
+
+    @PrePersist
+    void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }
