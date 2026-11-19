@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { request } from "./api";
 
-const COLORS = ["#7c5cff", "#22d3ee", "#2ee59d", "#ffb020", "#ff4d6d"];
+const COLORS = ["#60C1E5", "#005A9C", "#A0E0EF", "#3d8fc7", "#8fd3ec"];
 
 export default function Stats() {
   const [s, setS] = useState(null);
@@ -27,9 +27,12 @@ export default function Stats() {
       <div className="card" style={{ height: 300 }}>
         <ResponsiveContainer>
           <BarChart data={chart}>
-            <XAxis dataKey="name" stroke="#8e98c4" />
-            <YAxis allowDecimals={false} stroke="#8e98c4" />
-            <Tooltip contentStyle={{ background: "#182042", border: "1px solid #26305a", borderRadius: 10 }} />
+            <XAxis dataKey="name" stroke="#9db8d0" />
+            <YAxis allowDecimals={false} stroke="#9db8d0" />
+            <Tooltip
+              cursor={{ fill: "#ffffff10" }}
+              contentStyle={{ background: "#1B365D", border: "1px solid #2b4d7d", borderRadius: 10, color: "#eaf6fb" }}
+            />
             <Bar dataKey="count" radius={[8, 8, 0, 0]}>
               {chart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Bar>
